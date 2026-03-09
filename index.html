@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGNIS GAZE | CONCEPT_PROTOTYPE_v0.9.5P</title>
+    <style>
+        /* IDENTITY SYSTEM: ARCHITECTURAL DNA
+        Logic: Absolute White / Signal Heat / Zero Gradient
+        Angle Constant: 18.435° (Ericsson Law)
+        Status: PROOF_OF_CONCEPT / SIMULATION_PHASE
+        */
+
+        :root {
+            --white: #FFFFFF;
+            --black: #000000;
+            --signal-heat: #FF3B00;  /* Signal Red/Orange */
+            --signal-safe: #0055FF;  /* Breadcrumb Blue */
+            --signal-warn: #FFB800;  /* Ambient Yellow */
+            --ink-10: #E5E5E5;
+            --ink-30: #B2B2B2;
+            
+            --t-display: clamp(38px, 12vw, 84px);
+            --t-heading: clamp(20px, 6vw, 32px);
+            --t-label: 9px;
+            --t-data: 9px;
+
+            --ericsson-angle: 18.435deg;
+            --grid-unit: 8px;
+            --border-width: 1px;
+            --nav-height: 64px;
+        }
+
+        /* RESET & BRUTALIST BASE */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--white);
+            color: var(--black);
+            font-family: "Helvetica Now", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            line-height: 1.2;
+        }
+
+        /* SYSTEM OVERLAY: 0.5Hz SCANLINE */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 10000;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0,0,0,0.01) 2px,
+                rgba(0,0,0,0.01) 3px
+            );
+            animation: pulseScan 2s steps(1) infinite;
+        }
+        @keyframes pulseScan { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+        /* TYPOGRAPHY SYSTEMS */
+        .lab-display {
+            font-size: var(--t-display);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+            line-height: 0.85;
+        }
+
+        .lab-heading {
+            font-size: var(--t-heading);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .mono-label {
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            font-size: var(--t-label);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 600;
+        }
+
+        .mono-data {
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            font-size: var(--t-data);
+            text-transform: uppercase;
+            color: var(--ink-30);
+            line-height: 1.4;
+        }
+
+        /* GRID SYSTEM */
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            border-left: var(--border-width) solid var(--black);
+            border-top: var(--border-width) solid var(--black);
+        }
+
+        .module {
+            grid-column: span 12;
+            border-right: var(--border-width) solid var(--black);
+            border-bottom: var(--border-width) solid var(--black);
+            padding: calc(var(--grid-unit) * 3);
+            position: relative;
+        }
+
+        @media (min-width: 1024px) {
+            .module { padding: calc(var(--grid-unit) * 4); }
+            .module.half { grid-column: span 6; }
+            .module.eight { grid-column: span 8; }
+            .module.four { grid-column: span 4; }
+        }
+
+        /* NAVIGATION: MOBILE OPTIMIZED */
+        .utility-nav {
+            position: sticky; 
+            top: 0; 
+            background: var(--white); 
+            z-index: 9000; 
+            border-bottom: var(--border-width) solid var(--black);
+            padding: 0 calc(var(--grid-unit) * 2);
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: var(--nav-height);
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .nav-id {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        @media (max-width: 640px) {
+            .nav-inner { height: auto; padding: 12px 0; flex-direction: column; gap: 12px; align-items: flex-start; }
+            .nav-links { width: 100%; justify-content: space-between; border-top: 1px solid var(--ink-10); padding-top: 10px; }
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--signal-safe); /* banner indices remain blue as system active channels */
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .nav-links span.label {
+            display: inline-block;
+            margin-left: 2px;
+            color: var(--signal-safe); 
+        }
+
+        .slash {
+            transform: rotate(var(--ericsson-angle));
+            display: inline-block;
+            margin: 0 6px;
+            font-weight: 300;
+            color: var(--ink-10);
+        }
+
+        /* HALLWAY SCHEMATIC HERO */
+        .schematic-canvas {
+            height: clamp(320px, 45vh, 600px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--white);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .schematic-svg {
+            width: 100%;
+            height: 100%;
+            max-width: 1000px;
+        }
+
+        .schematic-svg line, .schematic-svg path, .schematic-svg rect {
+            stroke: var(--black);
+            stroke-width: 0.5;
+            fill: none;
+        }
+
+        .room-label { font-size: 8px; font-family: ui-monospace, monospace; fill: var(--ink-30); }
+
+        /* BREADCRUMB TRAILS */
+        .trail-path { stroke-width: 2.5; stroke-dasharray: 6, 3; }
+        .trail-blue { stroke: var(--signal-safe); }
+        .trail-orange { stroke: var(--signal-heat); }
+        .trail-yellow { stroke: var(--signal-warn); }
+
+        /* BUTTONS */
+        .btn-module {
+            display: inline-flex;
+            justify-content: center;
+            padding: 18px 24px;
+            border: var(--border-width) solid var(--black);
+            background: transparent;
+            color: var(--black);
+            text-transform: uppercase;
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        @media (min-width: 640px) {
+            .btn-module { width: auto; padding: 20px 40px; }
+        }
+
+        .btn-module:hover { background: var(--black); color: var(--white); }
+
+        /* DATA INDICATORS */
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .dot { width: 6px; height: 6px; background: var(--black); }
+        .dot.blue { background: var(--signal-safe); }
+        .dot.orange { background: var(--signal-heat); }
+        .dot.yellow { background: var(--signal-warn); }
+
+        /* FOOTER MANIFEST */
+        .manifest {
+            background: var(--black);
+            color: var(--white);
+            border-top: var(--border-width) solid var(--black);
+        }
+
+        .manifest-bottom {
+            padding: calc(var(--grid-unit) * 6) calc(var(--grid-unit) * 4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 640px) {
+            .manifest-bottom { flex-direction: column; gap: 24px; text-align: center; }
+        }
+
+        .pulse-dot {
+            width: 6px; height: 6px;
+            background: var(--signal-heat);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: opPulse 1s infinite alternate;
+        }
+
+        @keyframes opPulse { from { opacity: 0.2; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <nav class="utility-nav">
+        <div class="nav-inner">
+            <div class="nav-id">
+                <div class="mono-label" style="letter-spacing: 0.2em;">IGNIS GAZE</div>
+                <div class="mono-data" style="color: var(--signal-heat); font-size: 8px;">SIM_POC_v0.9.5P</div>
+            </div>
+            <div class="nav-links mono-label">
+                <a href="#hallway">01<span class="label">_SPATIAL</span></a><span class="slash">/</span>
+                <a href="#persistence">02<span class="label">_SYNC</span></a><span class="slash">/</span>
+                <a href="#logs">03<span class="label">_DIAG</span></a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="module-grid">
+        
+        <!-- STATUS MODULE -->
+        <div class="module half">
+            <div class="mono-data">CONTEXT: <span style="color: var(--black);">SIM_HALLWAY_V1</span></div>
+            <div class="mono-data">DATA_STATE: ASYNC_SYNC_ENABLED</div>
+        </div>
+        <div class="module half" style="text-align: right;">
+            <div class="mono-data">PHASE: ALPHA_POC</div>
+            <div class="mono-data">ENGINE: <span style="color: var(--signal-heat);">ACTIVE_SWITCHING</span></div>
+        </div>
+
+        <!-- HERO SCHEMATIC -->
+        <div class="module eight" style="padding: 0;">
+            <div class="schematic-canvas" id="hallway">
+                <svg class="schematic-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
+                    <!-- Hatch Pattern for Thermal Zone -->
+                    <defs>
+                        <pattern id="thermalHatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                            <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(255, 59, 0, 0.15)" stroke-width="1" />
+                        </pattern>
+                    </defs>
+
+                    <!-- Hallway Borders -->
+                    <rect x="50" y="100" width="700" height="100" stroke-dasharray="2,2"/>
+                    
+                    <!-- Room 01: Normal (Absolute Baseline) -->
+                    <rect x="50" y="50" width="150" height="50" stroke="#000"/>
+                    <text x="60" y="40" class="room-label">ROOM_01: OPTICAL_NORMAL</text>
+                    
+                    <!-- Room 02: Dark (Luminance Drop Highlight) -->
+                    <rect x="250" y="50" width="150" height="50" fill="rgba(10,10,10,0.06)" stroke="#000"/>
+                    <text x="260" y="40" class="room-label">ROOM_02: LOW_LIGHT_AMP</text>
+                    
+                    <!-- Room 03: Smoke/Fire (High Heat Signal) -->
+                    <rect x="450" y="50" width="150" height="50" fill="url(#thermalHatch)" stroke="var(--signal-heat)" stroke-width="1.5"/>
+                    <rect x="450" y="50" width="150" height="50" fill="rgba(255, 59, 0, 0.08)" />
+                    <text x="460" y="40" class="room-label" style="fill: var(--signal-heat); font-weight: 700;">ROOM_03: THERMAL_CRITICAL</text>
+                    
+                    <!-- Persistent Trails -->
+                    <path d="M70,150 L200,150 L275,150 L400,150 L450,150" class="trail-path trail-blue"/>
+                    <path d="M450,150 L530,150" class="trail-path trail-orange"/>
+                    <path d="M530,150 L650,150" class="trail-path trail-yellow"/>
+                    
+                    <!-- Legend Overlay -->
+                    <text x="580" y="240" class="mono-data" fill="var(--signal-safe)" font-size="7">[BLUE]: PERSISTENT_PATH_SAFE</text>
+                    <text x="580" y="255" class="mono-data" fill="var(--signal-warn)" font-size="7">[YEL]: THERMAL_AMBIENT_UPDATE</text>
+                    <text x="580" y="270" class="mono-data" fill="var(--signal-heat)" font-size="7">[ORG]: THERMAL_CRITICAL_UPDATE</text>
+                </svg>
+            </div>
+        </div>
+
+        <!-- CONCEPT TITLE -->
+        <div class="module four" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <span class="mono-label" style="color: var(--signal-safe);">Form_Switching_Logic</span>
+                <h1 class="lab-display">SPATIAL<br>SYNC</h1>
+            </div>
+            <p class="mono-data" style="margin-top: 24px; color: var(--black); font-size: 11px;">
+                Instantaneous vision-mode swapping based on environmental occlusion. 
+                Data persistence ensures inherited "Heat-Map Trails" across multiple responder units.
+            </p>
+        </div>
+
+        <!-- SPECS -->
+        <div class="module eight" id="persistence">
+            <span class="mono-label">Persistence_Rule_Set</span>
+            <div class="module-grid" style="border: none; margin-top: 16px;">
+                <div class="module half" style="border-top: none; padding-left: 0;">
+                    <div class="indicator"><div class="dot blue"></div><span class="mono-label">Path_Safe</span></div>
+                    <p class="mono-data">Persistent coordinates recorded where ambient temp &lt; 40°C. Data remains until operational conclusion.</p>
+                </div>
+                <div class="module half" style="border-top: none; border-right: none;">
+                    <div class="indicator"><div class="dot orange"></div><span class="mono-label">Path_Thermal</span></div>
+                    <p class="mono-data">Active orange trace for heat sources &gt; 120°C. 500ms refresh rate.</p>
+                </div>
+            </div>
+        </div>
+        <div class="module four">
+            <span class="mono-label">Switch_Latency</span>
+            <div class="lab-heading" style="color: var(--signal-heat);">&lt;1.0MS</div>
+        </div>
+
+        <!-- DIAGNOSTICS -->
+        <div class="module eight" id="logs">
+            <span class="mono-label">Diagnostic_Terminal</span>
+            <div style="margin-top: 16px; border-top: 1px solid var(--ink-10); padding-top: 16px;">
+                <div class="mono-data" style="margin-bottom: 4px;">[12:01:05] ROOM_02_DETECTED: SWITCHING_TO_AMP... <span style="color: var(--signal-safe);">SUCCESS</span></div>
+                <div class="mono-data" style="margin-bottom: 4px;">[12:01:12] ROOM_03_DETECTED: SWITCHING_TO_LWIR... <span style="color: var(--signal-heat);">SUCCESS</span></div>
+                <div class="mono-data">[12:01:20] MULTI_USER: SYNCING_PERSISTENT_TRAIL_01... <span style="color: var(--signal-safe);">DONE</span></div>
+            </div>
+        </div>
+        <div class="module four">
+            <span class="mono-label">Prototype_Note</span>
+            <p class="mono-data" style="margin-top: 12px;">Proof of Concept demo. Spatial mapping currently vector-simulated. Physical hardware not yet integrated.</p>
+        </div>
+
+        <!-- ACTION -->
+        <div class="module span-12" id="brief" style="text-align: center;">
+            <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                <a href="mailto:research@ignisgaze.com" class="btn-module">Request Technical Briefing</a>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER MANIFEST -->
+    <footer class="manifest">
+        <div class="manifest-bottom">
+            <div class="mono-label" style="color: var(--white); font-size: 14px; letter-spacing: 0.3em;">IGNIS GAZE</div>
+            <div style="display: flex; gap: 32px; align-items: center;">
+                <div class="mono-data" style="color: var(--white);"><span class="pulse-dot"></span>ACTIVE_POC_v0.9.5P</div>
+                <div class="mono-data" id="sysClock" style="color: var(--ink-30); min-width: 80px; text-align: right;">00:00:00:00</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // High-frequency surgical clock for system manifest
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0');
+            const el = document.getElementById('sysClock');
+            if(el) el.innerText = `${h}:${m}:${s}:${ms}`;
+            requestAnimationFrame(updateClock);
+        }
+        updateClock();
+    </script>
+</body>
+</html>
