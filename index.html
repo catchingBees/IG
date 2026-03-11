@@ -20,8 +20,8 @@
             --ink-10: #E5E5E5;
             --ink-30: #B2B2B2;
             
-            --t-display: clamp(38px, 12vw, 84px);
-            --t-heading: clamp(20px, 6vw, 32px);
+            --t-display: clamp(34px, 12vw, 84px);
+            --t-heading: clamp(18px, 6vw, 32px);
             --t-label: 9px;
             --t-data: 9px;
 
@@ -103,13 +103,15 @@
             grid-column: span 12;
             border-right: var(--border-width) solid var(--black);
             border-bottom: var(--border-width) solid var(--black);
-            padding: calc(var(--grid-unit) * 3);
+            padding: calc(var(--grid-unit) * 2.5);
             position: relative;
         }
 
         @media (min-width: 1024px) {
             .module { padding: calc(var(--grid-unit) * 4); }
             .module.half { grid-column: span 6; }
+            .module.seven { grid-column: span 7; }
+            .module.five { grid-column: span 5; }
             .module.eight { grid-column: span 8; }
             .module.four { grid-column: span 4; }
         }
@@ -146,16 +148,16 @@
         }
 
         @media (max-width: 640px) {
-            .nav-inner { height: auto; padding: 12px 0; flex-direction: column; gap: 12px; align-items: flex-start; }
-            .nav-links { width: 100%; justify-content: space-between; border-top: 1px solid var(--ink-10); padding-top: 10px; }
+            .nav-inner { height: auto; padding: 16px 0; flex-direction: column; gap: 16px; align-items: flex-start; }
+            .nav-links { width: 100%; justify-content: space-between; border-top: 1px solid var(--ink-10); padding-top: 14px; }
         }
 
         .nav-links a {
             text-decoration: none;
-            color: var(--signal-safe); /* banner indices remain blue as system active channels */
+            color: var(--signal-safe);
             display: flex;
             align-items: center;
-            padding: 4px 0;
+            padding: 8px 4px; 
         }
 
         .nav-links span.label {
@@ -172,36 +174,40 @@
             color: var(--ink-10);
         }
 
-        /* HALLWAY SCHEMATIC HERO */
+        /* HALLWAY SIMULATION CANVAS */
         .schematic-canvas {
-            height: clamp(320px, 45vh, 600px);
+            height: clamp(300px, 45vh, 600px);
             display: flex;
             align-items: center;
             justify-content: center;
             background: var(--white);
             overflow: hidden;
-            padding: 20px;
+            padding: 10px;
+            cursor: crosshair;
         }
 
-        .schematic-svg {
+        @media (min-width: 768px) {
+            .schematic-canvas { padding: 20px; }
+        }
+
+        canvas#hallwaySim {
             width: 100%;
             height: 100%;
             max-width: 1000px;
+            touch-action: none;
         }
 
-        .schematic-svg line, .schematic-svg path, .schematic-svg rect {
-            stroke: var(--black);
-            stroke-width: 0.5;
-            fill: none;
+        /* DATA INDICATORS */
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
         }
-
-        .room-label { font-size: 8px; font-family: ui-monospace, monospace; fill: var(--ink-30); }
-
-        /* BREADCRUMB TRAILS */
-        .trail-path { stroke-width: 2.5; stroke-dasharray: 6, 3; }
-        .trail-blue { stroke: var(--signal-safe); }
-        .trail-orange { stroke: var(--signal-heat); }
-        .trail-yellow { stroke: var(--signal-warn); }
+        .dot { width: 6px; height: 6px; background: var(--black); }
+        .dot.blue { background: var(--signal-safe); }
+        .dot.orange { background: var(--signal-heat); }
+        .dot.yellow { background: var(--signal-warn); }
 
         /* BUTTONS */
         .btn-module {
@@ -226,18 +232,6 @@
 
         .btn-module:hover { background: var(--black); color: var(--white); }
 
-        /* DATA INDICATORS */
-        .indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .dot { width: 6px; height: 6px; background: var(--black); }
-        .dot.blue { background: var(--signal-safe); }
-        .dot.orange { background: var(--signal-heat); }
-        .dot.yellow { background: var(--signal-warn); }
-
         /* FOOTER MANIFEST */
         .manifest {
             background: var(--black);
@@ -246,10 +240,14 @@
         }
 
         .manifest-bottom {
-            padding: calc(var(--grid-unit) * 6) calc(var(--grid-unit) * 4);
+            padding: calc(var(--grid-unit) * 4) calc(var(--grid-unit) * 3);
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        @media (min-width: 768px) {
+            .manifest-bottom { padding: calc(var(--grid-unit) * 6) calc(var(--grid-unit) * 4); }
         }
 
         @media (max-width: 640px) {
@@ -278,7 +276,7 @@
                 <div class="mono-data" style="color: var(--signal-heat); font-size: 8px;">SIM_POC_v0.9.5P</div>
             </div>
             <div class="nav-links mono-label">
-                <a href="#hallway">01<span class="label">_SPATIAL</span></a><span class="slash">/</span>
+                <a href="#spatial">01<span class="label">_SPATIAL</span></a><span class="slash">/</span>
                 <a href="#persistence">02<span class="label">_SYNC</span></a><span class="slash">/</span>
                 <a href="#logs">03<span class="label">_DIAG</span></a>
             </div>
@@ -287,65 +285,37 @@
 
     <main class="module-grid">
         
-        <!-- STATUS MODULE -->
+        <!-- STATUS MODULE (Left Side Tracking) -->
         <div class="module half">
-            <div class="mono-data">CONTEXT: <span style="color: var(--black);">SIM_HALLWAY_V1</span></div>
-            <div class="mono-data">DATA_STATE: ASYNC_SYNC_ENABLED</div>
+            <div class="mono-label" style="color: var(--signal-heat); margin-bottom: 8px;">Manual Override Active</div>
+            <p class="mono-data" style="color: var(--black); margin-bottom: 12px; line-height: 1.5; font-size: 10px; max-width: 320px;">
+                Drag the responder unit (Blue Circle) to verify instantaneous sensor handshakes and persistence buffers.
+            </p>
+            <div class="bg-stone-50 p-2 border border-stone-100 inline-block">
+                <div class="mono-label text-[8px] text-stone-400 mb-1">Position_Vector</div>
+                <div class="mono-label" id="coordTracker" style="font-size: 12px; color: var(--black); letter-spacing: 0.05em;">X: 205 | Y: 106</div>
+            </div>
         </div>
-        <div class="module half" style="text-align: right;">
+        <div class="module half" style="text-align: right; display: flex; flex-direction: column; justify-content: flex-end;">
             <div class="mono-data">PHASE: ALPHA_POC</div>
-            <div class="mono-data">ENGINE: <span style="color: var(--signal-heat);">ACTIVE_SWITCHING</span></div>
+            <div class="mono-data">MODE: <span id="currentModeDisplay" style="color: var(--signal-safe); font-weight: bold;">OPTICAL_NORMAL</span></div>
         </div>
 
-        <!-- HERO SCHEMATIC -->
-        <div class="module eight" style="padding: 0;">
-            <div class="schematic-canvas" id="hallway">
-                <svg class="schematic-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
-                    <!-- Hatch Pattern for Thermal Zone -->
-                    <defs>
-                        <pattern id="thermalHatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                            <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(255, 59, 0, 0.15)" stroke-width="1" />
-                        </pattern>
-                    </defs>
-
-                    <!-- Hallway Borders -->
-                    <rect x="50" y="100" width="700" height="100" stroke-dasharray="2,2"/>
-                    
-                    <!-- Room 01: Normal (Absolute Baseline) -->
-                    <rect x="50" y="50" width="150" height="50" stroke="#000"/>
-                    <text x="60" y="40" class="room-label">ROOM_01: OPTICAL_NORMAL</text>
-                    
-                    <!-- Room 02: Dark (Luminance Drop Highlight) -->
-                    <rect x="250" y="50" width="150" height="50" fill="rgba(10,10,10,0.06)" stroke="#000"/>
-                    <text x="260" y="40" class="room-label">ROOM_02: LOW_LIGHT_AMP</text>
-                    
-                    <!-- Room 03: Smoke/Fire (High Heat Signal) -->
-                    <rect x="450" y="50" width="150" height="50" fill="url(#thermalHatch)" stroke="var(--signal-heat)" stroke-width="1.5"/>
-                    <rect x="450" y="50" width="150" height="50" fill="rgba(255, 59, 0, 0.08)" />
-                    <text x="460" y="40" class="room-label" style="fill: var(--signal-heat); font-weight: 700;">ROOM_03: THERMAL_CRITICAL</text>
-                    
-                    <!-- Persistent Trails -->
-                    <path d="M70,150 L200,150 L275,150 L400,150 L450,150" class="trail-path trail-blue"/>
-                    <path d="M450,150 L530,150" class="trail-path trail-orange"/>
-                    <path d="M530,150 L650,150" class="trail-path trail-yellow"/>
-                    
-                    <!-- Legend Overlay -->
-                    <text x="580" y="240" class="mono-data" fill="var(--signal-safe)" font-size="7">[BLUE]: PERSISTENT_PATH_SAFE</text>
-                    <text x="580" y="255" class="mono-data" fill="var(--signal-warn)" font-size="7">[YEL]: THERMAL_AMBIENT_UPDATE</text>
-                    <text x="580" y="270" class="mono-data" fill="var(--signal-heat)" font-size="7">[ORG]: THERMAL_CRITICAL_UPDATE</text>
-                </svg>
+        <!-- HERO SCHEMATIC / SIMULATION -->
+        <div class="module seven" style="padding: 0;" id="spatial">
+            <div class="schematic-canvas">
+                <canvas id="hallwaySim"></canvas>
             </div>
         </div>
 
-        <!-- CONCEPT TITLE -->
-        <div class="module four" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <!-- CONCEPT TITLE: REPOSITIONED LEFT -->
+        <div class="module five" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <span class="mono-label" style="color: var(--signal-safe);">Form_Switching_Logic</span>
                 <h1 class="lab-display">SPATIAL<br>SYNC</h1>
             </div>
-            <p class="mono-data" style="margin-top: 24px; color: var(--black); font-size: 11px;">
-                Instantaneous vision-mode swapping based on environmental occlusion. 
-                Data persistence ensures inherited "Heat-Map Trails" across multiple responder units.
+            <p class="mono-data" style="margin-top: 24px; color: var(--black); font-size: 11px; line-height: 1.6;">
+                Instantaneous vision-mode swapping based on environmental occlusion. Data persistence ensures inherited "Heat-Map Trails" across multiple responder units.
             </p>
         </div>
 
@@ -359,27 +329,26 @@
                 </div>
                 <div class="module half" style="border-top: none; border-right: none;">
                     <div class="indicator"><div class="dot orange"></div><span class="mono-label">Path_Thermal</span></div>
-                    <p class="mono-data">Active orange trace for heat sources &gt; 120°C. 500ms refresh rate.</p>
+                    <p class="mono-data">Active orange trace for heat sources &gt; 120°C. Refreshes at 500ms to reflect dynamic fire spread.</p>
                 </div>
             </div>
         </div>
         <div class="module four">
             <span class="mono-label">Switch_Latency</span>
-            <div class="lab-heading" style="color: var(--signal-heat);">&lt;1.0MS</div>
+            <div class="lab-heading" style="color: var(--signal-heat);" id="latencyVal">&lt;0.82MS</div>
         </div>
 
         <!-- DIAGNOSTICS -->
         <div class="module eight" id="logs">
             <span class="mono-label">Diagnostic_Terminal</span>
-            <div style="margin-top: 16px; border-top: 1px solid var(--ink-10); padding-top: 16px;">
-                <div class="mono-data" style="margin-bottom: 4px;">[12:01:05] ROOM_02_DETECTED: SWITCHING_TO_AMP... <span style="color: var(--signal-safe);">SUCCESS</span></div>
-                <div class="mono-data" style="margin-bottom: 4px;">[12:01:12] ROOM_03_DETECTED: SWITCHING_TO_LWIR... <span style="color: var(--signal-heat);">SUCCESS</span></div>
-                <div class="mono-data">[12:01:20] MULTI_USER: SYNCING_PERSISTENT_TRAIL_01... <span style="color: var(--signal-safe);">DONE</span></div>
+            <div id="terminalBody" style="margin-top: 16px; border-top: 1px solid var(--ink-10); padding-top: 16px; height: 100px; overflow-y: auto;">
+                <div class="mono-data" style="margin-bottom: 4px;">[INITIALIZING] GAZE_OS_BOOT... <span style="color: var(--signal-safe);">SUCCESS</span></div>
+                <div class="mono-data" style="margin-bottom: 4px;">[READY] WAITING_FOR_UNIT_HANDSHAKE...</div>
             </div>
         </div>
         <div class="module four">
             <span class="mono-label">Prototype_Note</span>
-            <p class="mono-data" style="margin-top: 12px;">Proof of Concept demo. Spatial mapping currently vector-simulated. Physical hardware not yet integrated.</p>
+            <p class="mono-data" style="margin-top: 12px;">Proof of Concept demo. Spatial mapping currently simulated via internal vector engine. Coordination friction: 0.00%.</p>
         </div>
 
         <!-- ACTION -->
@@ -403,7 +372,7 @@
     </footer>
 
     <script>
-        // High-frequency surgical clock for system manifest
+        // --- SYSTEM CLOCK ---
         function updateClock() {
             const now = new Date();
             const h = String(now.getHours()).padStart(2, '0');
@@ -415,6 +384,190 @@
             requestAnimationFrame(updateClock);
         }
         updateClock();
+
+        // --- SIMULATION ENGINE ---
+        const canvas = document.getElementById('hallwaySim');
+        const ctx = canvas.getContext('2d');
+        const terminal = document.getElementById('terminalBody');
+        const modeDisplay = document.getElementById('currentModeDisplay');
+        const coordTracker = document.getElementById('coordTracker');
+        
+        let state = {
+            pos: { x: 205, y: 106 },
+            isDragging: false,
+            trail: [],
+            currentMode: 'OPTICAL_NORMAL',
+            width: 800,
+            height: 300
+        };
+
+        function addLog(msg, colorClass = '') {
+            const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const logEntry = document.createElement('div');
+            logEntry.className = 'mono-data';
+            logEntry.style.marginBottom = '4px';
+            logEntry.innerHTML = `[${time}] ${msg}`;
+            if (colorClass) logEntry.style.color = colorClass;
+            terminal.prepend(logEntry);
+            if (terminal.childNodes.length > 20) terminal.lastChild.remove();
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * devicePixelRatio;
+            canvas.height = rect.height * devicePixelRatio;
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+            draw();
+        }
+
+        function draw() {
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            const sx = w / 800;
+            const sy = h / 300;
+
+            const legendX = w < 400 ? 10 : 580 * sx;
+            const legendY = w < 400 ? h - 60 : 240 * sy;
+
+            // Hallway Boundaries
+            ctx.strokeStyle = '#000';
+            ctx.setLineDash([2, 2]);
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(50 * sx, 100 * sy, 700 * sx, 100 * sy);
+            ctx.setLineDash([]);
+
+            // Room 01: Normal
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(50 * sx, 50 * sy, 150 * sx, 50 * sy);
+            ctx.font = '8px ui-monospace';
+            ctx.fillStyle = '#b2b2b2';
+            ctx.fillText('ROOM_01: OPTICAL', 60 * sx, 40 * sy);
+
+            // Room 02: Dark
+            ctx.fillStyle = 'rgba(10,10,10,0.06)';
+            ctx.fillRect(250 * sx, 50 * sy, 150 * sx, 50 * sy);
+            ctx.strokeRect(250 * sx, 50 * sy, 150 * sx, 50 * sy);
+            ctx.fillStyle = '#b2b2b2';
+            ctx.fillText('ROOM_02: AMP', 260 * sx, 40 * sy);
+
+            // Room 03: Thermal
+            ctx.fillStyle = 'rgba(255, 59, 0, 0.04)';
+            ctx.fillRect(450 * sx, 50 * sy, 150 * sx, 50 * sy);
+            ctx.strokeStyle = '#FF3B00';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(450 * sx, 50 * sy, 150 * sx, 50 * sy);
+            
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 59, 0, 0.15)';
+            ctx.lineWidth = 0.5;
+            for(let i = 0; i < 150 * sx; i += 8) {
+                ctx.moveTo((450 * sx) + i, 50 * sy);
+                ctx.lineTo((450 * sx) + i + 10, 100 * sy);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = '#FF3B00';
+            ctx.fillText('ROOM_03: THERMAL', 460 * sx, 40 * sy);
+
+            // Persistent Trails
+            if (state.trail.length > 1) {
+                ctx.beginPath();
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([6, 3]);
+                ctx.moveTo(state.trail[0].x * sx, state.trail[0].y * sy);
+                
+                state.trail.forEach((p, i) => {
+                    if (i === 0) return;
+                    if (p.x >= 450 && p.x <= 600 && p.y >= 50 && p.y <= 200) {
+                        ctx.strokeStyle = '#FF3B00';
+                    } else if (p.x >= 250 && p.x <= 400 && p.y >= 50 && p.y <= 200) {
+                        ctx.strokeStyle = '#FFB800';
+                    } else {
+                        ctx.strokeStyle = '#0055FF';
+                    }
+                    ctx.lineTo(p.x * sx, p.y * sy);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(p.x * sx, p.y * sy);
+                });
+            }
+
+            // Legend Overlay
+            ctx.font = '7px ui-monospace';
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#0055FF'; ctx.fillText('[BLUE]: PATH_SAFE', legendX, legendY);
+            ctx.fillStyle = '#FFB800'; ctx.fillText('[YEL]: AMBIENT_UPDATE', legendX, legendY + 12);
+            ctx.fillStyle = '#FF3B00'; ctx.fillText('[ORG]: CRITICAL_UPDATE', legendX, legendY + 24);
+
+            // Responder Unit (Target)
+            ctx.beginPath();
+            ctx.arc(state.pos.x * sx, state.pos.y * sy, 7, 0, Math.PI * 2);
+            ctx.fillStyle = '#0055FF';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function handleMove(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const sx = canvas.clientWidth / 800;
+            const sy = canvas.clientHeight / 300;
+            
+            let x = (clientX - rect.left) / sx;
+            let y = (clientY - rect.top) / sy;
+
+            x = Math.max(0, Math.min(800, x));
+            y = Math.max(0, Math.min(300, y));
+
+            state.pos = { x, y };
+            state.trail.push({ x, y });
+            if (state.trail.length > 200) state.trail.shift();
+
+            coordTracker.innerText = `X: ${Math.round(x).toString().padStart(3, '0')} | Y: ${Math.round(y).toString().padStart(3, '0')}`;
+            
+            checkMode(x, y);
+            draw();
+        }
+
+        function checkMode(x, y) {
+            let mode = 'OPTICAL_NORMAL';
+            let color = 'var(--signal-safe)';
+
+            if (x >= 250 && x <= 400 && y >= 50 && y <= 150) {
+                mode = 'LOW_LIGHT_AMP';
+                color = 'var(--black)';
+            } else if (x >= 450 && x <= 600 && y >= 50 && y <= 150) {
+                mode = 'THERMAL_CRITICAL';
+                color = 'var(--signal-heat)';
+            }
+
+            if (state.currentMode !== mode) {
+                state.currentMode = mode;
+                modeDisplay.innerText = mode;
+                modeDisplay.style.color = color;
+                addLog(`SENSOR_TRANSITION -> ${mode}`, color === 'var(--black)' ? '' : color);
+            }
+        }
+
+        // --- INTERACTION HANDLERS ---
+        canvas.addEventListener('mousedown', (e) => { state.isDragging = true; handleMove(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', (e) => { if (state.isDragging) handleMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => { state.isDragging = false; });
+
+        canvas.addEventListener('touchstart', (e) => { state.isDragging = true; handleMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, {passive: false});
+        window.addEventListener('touchmove', (e) => { if (state.isDragging) handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        window.addEventListener('touchend', () => { state.isDragging = false; });
+
+        window.addEventListener('resize', resizeCanvas);
+        
+        window.onload = () => {
+            updateClock();
+            resizeCanvas();
+            addLog('SIM_CORE_LOADED: READY_FOR_INPUT');
+        };
     </script>
 </body>
 </html>
