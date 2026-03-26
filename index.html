@@ -232,7 +232,7 @@
 
         .btn-module:hover { background: var(--black); color: var(--white); }
 
-        /* FOOTER MANIFEST: UPDATED TO BLACK BACKGROUND */
+        /* FOOTER MANIFEST */
         .manifest {
             background: var(--black);
             color: var(--white);
@@ -257,7 +257,7 @@
         .pulse-dot {
             width: 6px; height: 6px;
             background: var(--signal-heat);
-            border-radius: 0; /* Square aesthetic applied */
+            border-radius: 0; 
             display: inline-block;
             margin-right: 8px;
             animation: opPulse 1s infinite alternate;
@@ -273,7 +273,7 @@
         <div class="nav-inner">
             <div class="nav-id">
                 <div class="mono-label" style="letter-spacing: 0.2em;">IGNIS GAZE</div>
-                <div class="mono-data" style="color: var(--signal-heat); font-size: 8px;">SIM_POC_v1.2.7P</div>
+                <div class="mono-data" style="color: var(--signal-heat); font-size: 8px;">SIM_POC_v1.2.9P</div>
             </div>
             <div class="nav-links mono-label">
                 <a href="#spatial">01<span class="label">_SPATIAL</span></a><span class="slash">/</span>
@@ -368,7 +368,7 @@
         <div class="manifest-bottom">
             <div class="mono-label" style="color: var(--white); font-size: 14px; letter-spacing: 0.3em;">IGNIS GAZE</div>
             <div style="display: flex; gap: 32px; align-items: center;">
-                <div class="mono-data" style="color: var(--white); text-transform: uppercase;"><span class="pulse-dot"></span>ACTIVE_POC_v1.2.7P</div>
+                <div class="mono-data" style="color: var(--white); text-transform: uppercase;"><span class="pulse-dot"></span>ACTIVE_POC_v1.2.9P</div>
             </div>
         </div>
     </footer>
@@ -398,7 +398,7 @@
             pos: { x: 205, y: 106 },
             isDragging: false,
             trail: [],
-            scanRecords: {}, // Store temperature for container portals
+            scanRecords: {}, 
             currentMode: 'OPTICAL_NORMAL',
             currentTemp: 22.4,
             width: 800,
@@ -408,18 +408,11 @@
 
         const COLORS = { HEAT: '#FF3B00', SAFE: '#0055FF', NVG: '#22C55E', BLACK: '#000000', GREY: '#B2B2B2', WHITE: '#FFFFFF' };
 
+        // POSITION UPDATE: Elevated containers from y:150 to y:120
         const CONTAINERS = [
-            { id: 'CNTR_01', x: 50, y: 150, w: 150, h: 60, portals: [50, 200] },
-            { id: 'CNTR_02', x: 250, y: 150, w: 150, h: 60, portals: [250, 400] },
-            { id: 'CNTR_03', x: 450, y: 150, w: 150, h: 60, portals: [450, 600] }
-        ];
-
-        // Isolated flora vectors (Peripheral clusters)
-        const FLORA_VECS = [
-            {x: 400, y: 275, h: 22}, 
-            {x: 550, y: 260, h: 24},
-            {x: 680, y: 280, h: 15},
-            {x: 750, y: 265, h: 20}
+            { id: 'CNTR_01', x: 50, y: 120, w: 150, h: 60, portals: [50, 200] },
+            { id: 'CNTR_02', x: 250, y: 120, w: 150, h: 60, portals: [250, 400] },
+            { id: 'CNTR_03', x: 450, y: 120, w: 150, h: 60, portals: [450, 600] }
         ];
 
         function addLog(msg, color = '') {
@@ -441,23 +434,6 @@
             draw();
         }
 
-        function drawFlora(x, y, h) {
-            ctx.strokeStyle = COLORS.BLACK; ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(x, y); ctx.lineTo(x, y - h); 
-            ctx.moveTo(x, y - h*0.6); ctx.lineTo(x-6, y - h*0.6); ctx.lineTo(x-6, y - h*0.8); 
-            ctx.moveTo(x, y - h*0.4); ctx.lineTo(x+4, y - h*0.4); ctx.lineTo(x+4, y - h*0.7); 
-            ctx.stroke();
-        }
-
-        function drawMountains(sx, sy) {
-            ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(0, 110*sy); ctx.lineTo(150*sx, 50*sy); ctx.lineTo(300*sx, 100*sy);
-            ctx.lineTo(450*sx, 40*sy); ctx.lineTo(650*sx, 90*sy); ctx.lineTo(800*sx, 50*sy);
-            ctx.stroke();
-        }
-
         function drawPortal(sx, sy, x, y, id) {
             ctx.fillStyle = COLORS.WHITE;
             ctx.strokeStyle = COLORS.BLACK;
@@ -465,7 +441,6 @@
             ctx.fillRect((x-2)*sx, y*sy, 4*sx, 60*sy);
             ctx.strokeRect((x-2)*sx, y*sy, 4*sx, 60*sy);
 
-            // DATA PIN (GROUND LEVEL READOUT)
             if (state.scanRecords[id]) {
                 const rec = state.scanRecords[id];
                 const pinX = x * sx - 20;
@@ -489,10 +464,6 @@
 
             const sx = w / 800; const sy = h / 300;
 
-            // Celestial bodies removed. Drawing mountains first.
-            drawMountains(sx, sy);
-
-            // Background environmental noise
             state.windOffset = (state.windOffset + 0.4) % 40;
             ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 0.5;
             for(let j=40; j<240; j+=80) {
@@ -502,13 +473,11 @@
                 }
             }
 
-            // Industrial Containers
             CONTAINERS.forEach(c => {
                 const stroke = c.id === 'CNTR_03' ? COLORS.HEAT : (c.id === 'CNTR_02' ? COLORS.NVG : COLORS.BLACK);
                 ctx.strokeStyle = stroke; ctx.lineWidth = 1;
                 ctx.strokeRect(c.x*sx, c.y*sy, c.w*sx, c.h*sy);
                 
-                // Ribbed texture
                 ctx.beginPath(); ctx.strokeStyle = 'rgba(0,0,0,0.05)';
                 for(let r=8; r<c.w; r+=10) { ctx.moveTo((c.x+r)*sx, c.y*sy); ctx.lineTo((c.x+r)*sx, (c.y+c.h)*sy); }
                 ctx.stroke();
@@ -519,33 +488,27 @@
                 ctx.fillText(c.id, (c.x+4)*sx, (c.y-6)*sy);
             });
 
-            // Foreground peripheral flora (Central/Right clusters only)
-            FLORA_VECS.forEach(v => drawFlora(v.x*sx, v.y*sy, v.h));
-
-            // Persistent Trails
             if (state.trail.length > 1) {
                 ctx.lineWidth = 2.5; ctx.setLineDash([6, 3]);
                 for(let i = 1; i < state.trail.length; i++) {
                     const p1 = state.trail[i-1]; const p2 = state.trail[i];
                     ctx.beginPath(); ctx.moveTo(p1.x * sx, p1.y * sy);
-                    if (p2.x >= 450 && p2.x <= 600 && p2.y >= 150 && p2.y <= 210) ctx.strokeStyle = COLORS.HEAT;
-                    else if (p2.x >= 250 && p2.x <= 400 && p2.y >= 150 && p2.y <= 210) ctx.strokeStyle = COLORS.BLACK;
+                    // Updated boundary checks for elevated container y:120
+                    if (p2.x >= 450 && p2.x <= 600 && p2.y >= 120 && p2.y <= 180) ctx.strokeStyle = COLORS.HEAT;
+                    else if (p2.x >= 250 && p2.x <= 400 && p2.y >= 120 && p2.y <= 180) ctx.strokeStyle = COLORS.BLACK;
                     else ctx.strokeStyle = COLORS.SAFE;
                     ctx.lineTo(p2.x * sx, p2.y * sy); ctx.stroke();
                 }
             }
 
-            // Legend Overlay (Strict Left Alignment)
             const lx = 15 * sx;
             ctx.font = '7px ui-monospace'; ctx.setLineDash([]);
             ctx.fillStyle = COLORS.SAFE; ctx.fillText('[BLUE]: PATH_SAFE', lx, h - 55);
             ctx.fillStyle = COLORS.GREY; ctx.fillText('[GREY]: AMBIENT_UPDATE', lx, h - 42);
             ctx.fillStyle = COLORS.HEAT; ctx.fillText('[ORG]: CRITICAL_UPDATE', lx, h - 29);
 
-            // Responder Unit (Target) with Instant Temp Tag
             const unitX = state.pos.x * sx;
             const unitY = state.pos.y * sy;
-            
             const tagW = 60 * sx;
             const tagH = 14 * sy;
             const tagX = unitX + 10;
@@ -582,7 +545,6 @@
 
             coordTracker.innerText = `X: ${Math.round(x).toString().padStart(3, '0')} | Y: ${Math.round(y).toString().padStart(3, '0')}`;
             
-            // PORTAL HANDSHAKE CHECK
             CONTAINERS.forEach(c => {
                 c.portals.forEach(px => {
                     if (Math.abs(x - px) < 15 && Math.abs(y - (c.y + c.h/2)) < 30) {
@@ -601,10 +563,17 @@
 
         function checkMode(x, y) {
             let mode = 'OPTICAL_NORMAL'; let color = COLORS.SAFE; let targetT = 22.4;
-            if (x >= 450 && x <= 600 && y >= 150 && y <= 210) { mode = 'THERMAL_CRITICAL'; color = COLORS.HEAT; targetT = 154.9; }
-            else if (x >= 250 && x <= 400 && y >= 150 && y <= 210) { mode = 'NIGHT_VISION_AMP'; color = COLORS.BLACK; targetT = 32.1; }
+            // Updated boundary logic for elevated containers y:120 to y:180
+            if (x >= 250 && x <= 400 && y >= 120 && y <= 180) {
+                mode = 'NIGHT_VISION_AMP';
+                color = COLORS.BLACK;
+                targetT = 32.1;
+            } else if (x >= 450 && x <= 600 && y >= 120 && y <= 180) {
+                mode = 'THERMAL_CRITICAL';
+                color = COLORS.HEAT;
+                targetT = 154.9;
+            }
 
-            // Instant data assignment
             state.currentTemp = targetT; 
             
             if (state.currentMode !== mode) {
@@ -614,15 +583,12 @@
             }
         }
 
-        // --- INTERACTION HANDLERS ---
         canvas.addEventListener('mousedown', (e) => { state.isDragging = true; handleMove(e.clientX, e.clientY); });
         window.addEventListener('mousemove', (e) => { if (state.isDragging) handleMove(e.clientX, e.clientY); });
         window.addEventListener('mouseup', () => { state.isDragging = false; });
-
         canvas.addEventListener('touchstart', (e) => { state.isDragging = true; handleMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, {passive: false});
         window.addEventListener('touchmove', (e) => { if (state.isDragging) handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
         window.addEventListener('touchend', () => { state.isDragging = false; });
-
         window.addEventListener('resize', resizeCanvas);
         
         window.onload = () => {
