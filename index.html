@@ -174,7 +174,7 @@
             color: var(--ink-10);
         }
 
-        /* HALLWAY SIMULATION CANVAS */
+        /* SIMULATION CANVAS */
         .schematic-canvas {
             height: clamp(300px, 45vh, 600px);
             display: flex;
@@ -232,7 +232,7 @@
 
         .btn-module:hover { background: var(--black); color: var(--white); }
 
-        /* FOOTER MANIFEST */
+        /* FOOTER MANIFEST: UPDATED TO BLACK BACKGROUND */
         .manifest {
             background: var(--black);
             color: var(--white);
@@ -240,24 +240,24 @@
         }
 
         .manifest-bottom {
-            padding: calc(var(--grid-unit) * 4) calc(var(--grid-unit) * 3);
+            padding: 0 calc(var(--grid-unit) * 2);
+            height: var(--nav-height);
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        @media (min-width: 768px) {
-            .manifest-bottom { padding: calc(var(--grid-unit) * 6) calc(var(--grid-unit) * 4); }
+            max-width: 1440px;
+            margin: 0 auto;
         }
 
         @media (max-width: 640px) {
-            .manifest-bottom { flex-direction: column; gap: 24px; text-align: center; }
+            .manifest-bottom { height: auto; padding: 24px calc(var(--grid-unit) * 2); flex-direction: column; gap: 24px; text-align: center; }
         }
 
+        /* SQUARE PULSE DOT INDICATOR */
         .pulse-dot {
             width: 6px; height: 6px;
             background: var(--signal-heat);
-            border-radius: 50%;
+            border-radius: 0; /* Square aesthetic applied */
             display: inline-block;
             margin-right: 8px;
             animation: opPulse 1s infinite alternate;
@@ -273,7 +273,7 @@
         <div class="nav-inner">
             <div class="nav-id">
                 <div class="mono-label" style="letter-spacing: 0.2em;">IGNIS GAZE</div>
-                <div class="mono-data" style="color: var(--signal-heat); font-size: 8px;">SIM_POC_v0.9.5P</div>
+                <div class="mono-data" style="color: var(--signal-heat); font-size: 8px;">SIM_POC_v1.2.7P</div>
             </div>
             <div class="nav-links mono-label">
                 <a href="#spatial">01<span class="label">_SPATIAL</span></a><span class="slash">/</span>
@@ -340,7 +340,10 @@
 
         <!-- DIAGNOSTICS -->
         <div class="module eight" id="logs">
-            <span class="mono-label">Diagnostic_Terminal</span>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span class="mono-label">Diagnostic_Terminal</span>
+                <div class="mono-data" id="sysClock" style="color: var(--black); font-weight: 900; letter-spacing: 0.1em;">00:00:00:00</div>
+            </div>
             <div id="terminalBody" style="margin-top: 16px; border-top: 1px solid var(--ink-10); padding-top: 16px; height: 100px; overflow-y: auto;">
                 <div class="mono-data" style="margin-bottom: 4px;">[INITIALIZING] GAZE_OS_BOOT... <span style="color: var(--signal-safe);">SUCCESS</span></div>
                 <div class="mono-data" style="margin-bottom: 4px;">[READY] WAITING_FOR_UNIT_HANDSHAKE...</div>
@@ -365,8 +368,7 @@
         <div class="manifest-bottom">
             <div class="mono-label" style="color: var(--white); font-size: 14px; letter-spacing: 0.3em;">IGNIS GAZE</div>
             <div style="display: flex; gap: 32px; align-items: center;">
-                <div class="mono-data" style="color: var(--white);"><span class="pulse-dot"></span>ACTIVE_POC_v0.9.5P</div>
-                <div class="mono-data" id="sysClock" style="color: var(--ink-30); min-width: 80px; text-align: right;">00:00:00:00</div>
+                <div class="mono-data" style="color: var(--white); text-transform: uppercase;"><span class="pulse-dot"></span>ACTIVE_POC_v1.2.7P</div>
             </div>
         </div>
     </footer>
@@ -396,18 +398,37 @@
             pos: { x: 205, y: 106 },
             isDragging: false,
             trail: [],
+            scanRecords: {}, // Store temperature for container portals
             currentMode: 'OPTICAL_NORMAL',
+            currentTemp: 22.4,
             width: 800,
-            height: 300
+            height: 300,
+            windOffset: 0
         };
 
-        function addLog(msg, colorClass = '') {
+        const COLORS = { HEAT: '#FF3B00', SAFE: '#0055FF', NVG: '#22C55E', BLACK: '#000000', GREY: '#B2B2B2', WHITE: '#FFFFFF' };
+
+        const CONTAINERS = [
+            { id: 'CNTR_01', x: 50, y: 150, w: 150, h: 60, portals: [50, 200] },
+            { id: 'CNTR_02', x: 250, y: 150, w: 150, h: 60, portals: [250, 400] },
+            { id: 'CNTR_03', x: 450, y: 150, w: 150, h: 60, portals: [450, 600] }
+        ];
+
+        // Isolated flora vectors (Peripheral clusters)
+        const FLORA_VECS = [
+            {x: 400, y: 275, h: 22}, 
+            {x: 550, y: 260, h: 24},
+            {x: 680, y: 280, h: 15},
+            {x: 750, y: 265, h: 20}
+        ];
+
+        function addLog(msg, color = '') {
             const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
             const logEntry = document.createElement('div');
             logEntry.className = 'mono-data';
             logEntry.style.marginBottom = '4px';
             logEntry.innerHTML = `[${time}] ${msg}`;
-            if (colorClass) logEntry.style.color = colorClass;
+            if (color) logEntry.style.color = color;
             terminal.prepend(logEntry);
             if (terminal.childNodes.length > 20) terminal.lastChild.remove();
         }
@@ -420,91 +441,129 @@
             draw();
         }
 
+        function drawFlora(x, y, h) {
+            ctx.strokeStyle = COLORS.BLACK; ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(x, y); ctx.lineTo(x, y - h); 
+            ctx.moveTo(x, y - h*0.6); ctx.lineTo(x-6, y - h*0.6); ctx.lineTo(x-6, y - h*0.8); 
+            ctx.moveTo(x, y - h*0.4); ctx.lineTo(x+4, y - h*0.4); ctx.lineTo(x+4, y - h*0.7); 
+            ctx.stroke();
+        }
+
+        function drawMountains(sx, sy) {
+            ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, 110*sy); ctx.lineTo(150*sx, 50*sy); ctx.lineTo(300*sx, 100*sy);
+            ctx.lineTo(450*sx, 40*sy); ctx.lineTo(650*sx, 90*sy); ctx.lineTo(800*sx, 50*sy);
+            ctx.stroke();
+        }
+
+        function drawPortal(sx, sy, x, y, id) {
+            ctx.fillStyle = COLORS.WHITE;
+            ctx.strokeStyle = COLORS.BLACK;
+            ctx.lineWidth = 1.5;
+            ctx.fillRect((x-2)*sx, y*sy, 4*sx, 60*sy);
+            ctx.strokeRect((x-2)*sx, y*sy, 4*sx, 60*sy);
+
+            // DATA PIN (GROUND LEVEL READOUT)
+            if (state.scanRecords[id]) {
+                const rec = state.scanRecords[id];
+                const pinX = x * sx - 20;
+                const pinY = (y + 70) * sy; 
+                
+                ctx.fillStyle = COLORS.WHITE;
+                ctx.fillRect(pinX, pinY, 42*sx, 12*sy);
+                ctx.strokeStyle = COLORS.BLACK; ctx.lineWidth = 0.5;
+                ctx.strokeRect(pinX, pinY, 42*sx, 12*sy);
+                
+                ctx.fillStyle = COLORS.BLACK;
+                ctx.font = '900 7px ui-monospace';
+                ctx.fillText(`${rec.toFixed(1)}°C`, pinX + 4*sx, pinY + 8*sy);
+            }
+        }
+
         function draw() {
             const w = canvas.clientWidth;
             const h = canvas.clientHeight;
             ctx.clearRect(0, 0, w, h);
 
-            const sx = w / 800;
-            const sy = h / 300;
+            const sx = w / 800; const sy = h / 300;
 
-            const legendX = w < 400 ? 10 : 580 * sx;
-            const legendY = w < 400 ? h - 60 : 240 * sy;
+            // Celestial bodies removed. Drawing mountains first.
+            drawMountains(sx, sy);
 
-            // Hallway Boundaries
-            ctx.strokeStyle = '#000';
-            ctx.setLineDash([2, 2]);
-            ctx.lineWidth = 0.5;
-            ctx.strokeRect(50 * sx, 100 * sy, 700 * sx, 100 * sy);
-            ctx.setLineDash([]);
-
-            // Room 01: Normal
-            ctx.strokeStyle = '#000';
-            ctx.strokeRect(50 * sx, 50 * sy, 150 * sx, 50 * sy);
-            ctx.font = '8px ui-monospace';
-            ctx.fillStyle = '#b2b2b2';
-            ctx.fillText('ROOM_01: OPTICAL', 60 * sx, 40 * sy);
-
-            // Room 02: Dark
-            ctx.fillStyle = 'rgba(10,10,10,0.06)';
-            ctx.fillRect(250 * sx, 50 * sy, 150 * sx, 50 * sy);
-            ctx.strokeRect(250 * sx, 50 * sy, 150 * sx, 50 * sy);
-            ctx.fillStyle = '#b2b2b2';
-            ctx.fillText('ROOM_02: AMP', 260 * sx, 40 * sy);
-
-            // Room 03: Thermal
-            ctx.fillStyle = 'rgba(255, 59, 0, 0.04)';
-            ctx.fillRect(450 * sx, 50 * sy, 150 * sx, 50 * sy);
-            ctx.strokeStyle = '#FF3B00';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(450 * sx, 50 * sy, 150 * sx, 50 * sy);
-            
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255, 59, 0, 0.15)';
-            ctx.lineWidth = 0.5;
-            for(let i = 0; i < 150 * sx; i += 8) {
-                ctx.moveTo((450 * sx) + i, 50 * sy);
-                ctx.lineTo((450 * sx) + i + 10, 100 * sy);
+            // Background environmental noise
+            state.windOffset = (state.windOffset + 0.4) % 40;
+            ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 0.5;
+            for(let j=40; j<240; j+=80) {
+                for(let i=0; i<800; i+=120) {
+                    const wx = (i + state.windOffset) * sx;
+                    ctx.beginPath(); ctx.moveTo(wx, j*sy); ctx.lineTo(wx + 15*sx, j*sy); ctx.stroke();
+                }
             }
-            ctx.stroke();
 
-            ctx.fillStyle = '#FF3B00';
-            ctx.fillText('ROOM_03: THERMAL', 460 * sx, 40 * sy);
+            // Industrial Containers
+            CONTAINERS.forEach(c => {
+                const stroke = c.id === 'CNTR_03' ? COLORS.HEAT : (c.id === 'CNTR_02' ? COLORS.NVG : COLORS.BLACK);
+                ctx.strokeStyle = stroke; ctx.lineWidth = 1;
+                ctx.strokeRect(c.x*sx, c.y*sy, c.w*sx, c.h*sy);
+                
+                // Ribbed texture
+                ctx.beginPath(); ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+                for(let r=8; r<c.w; r+=10) { ctx.moveTo((c.x+r)*sx, c.y*sy); ctx.lineTo((c.x+r)*sx, (c.y+c.h)*sy); }
+                ctx.stroke();
+
+                c.portals.forEach(px => drawPortal(sx, sy, px, c.y, `${c.id}_${px}`));
+
+                ctx.font = '7px ui-monospace'; ctx.fillStyle = COLORS.GREY;
+                ctx.fillText(c.id, (c.x+4)*sx, (c.y-6)*sy);
+            });
+
+            // Foreground peripheral flora (Central/Right clusters only)
+            FLORA_VECS.forEach(v => drawFlora(v.x*sx, v.y*sy, v.h));
 
             // Persistent Trails
             if (state.trail.length > 1) {
-                ctx.beginPath();
-                ctx.lineWidth = 2.5;
-                ctx.setLineDash([6, 3]);
-                ctx.moveTo(state.trail[0].x * sx, state.trail[0].y * sy);
-                
-                state.trail.forEach((p, i) => {
-                    if (i === 0) return;
-                    if (p.x >= 450 && p.x <= 600 && p.y >= 50 && p.y <= 200) {
-                        ctx.strokeStyle = '#FF3B00';
-                    } else if (p.x >= 250 && p.x <= 400 && p.y >= 50 && p.y <= 200) {
-                        ctx.strokeStyle = '#FFB800';
-                    } else {
-                        ctx.strokeStyle = '#0055FF';
-                    }
-                    ctx.lineTo(p.x * sx, p.y * sy);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(p.x * sx, p.y * sy);
-                });
+                ctx.lineWidth = 2.5; ctx.setLineDash([6, 3]);
+                for(let i = 1; i < state.trail.length; i++) {
+                    const p1 = state.trail[i-1]; const p2 = state.trail[i];
+                    ctx.beginPath(); ctx.moveTo(p1.x * sx, p1.y * sy);
+                    if (p2.x >= 450 && p2.x <= 600 && p2.y >= 150 && p2.y <= 210) ctx.strokeStyle = COLORS.HEAT;
+                    else if (p2.x >= 250 && p2.x <= 400 && p2.y >= 150 && p2.y <= 210) ctx.strokeStyle = COLORS.BLACK;
+                    else ctx.strokeStyle = COLORS.SAFE;
+                    ctx.lineTo(p2.x * sx, p2.y * sy); ctx.stroke();
+                }
             }
 
-            // Legend Overlay
-            ctx.font = '7px ui-monospace';
-            ctx.setLineDash([]);
-            ctx.fillStyle = '#0055FF'; ctx.fillText('[BLUE]: PATH_SAFE', legendX, legendY);
-            ctx.fillStyle = '#FFB800'; ctx.fillText('[YEL]: AMBIENT_UPDATE', legendX, legendY + 12);
-            ctx.fillStyle = '#FF3B00'; ctx.fillText('[ORG]: CRITICAL_UPDATE', legendX, legendY + 24);
+            // Legend Overlay (Strict Left Alignment)
+            const lx = 15 * sx;
+            ctx.font = '7px ui-monospace'; ctx.setLineDash([]);
+            ctx.fillStyle = COLORS.SAFE; ctx.fillText('[BLUE]: PATH_SAFE', lx, h - 55);
+            ctx.fillStyle = COLORS.GREY; ctx.fillText('[GREY]: AMBIENT_UPDATE', lx, h - 42);
+            ctx.fillStyle = COLORS.HEAT; ctx.fillText('[ORG]: CRITICAL_UPDATE', lx, h - 29);
 
-            // Responder Unit (Target)
+            // Responder Unit (Target) with Instant Temp Tag
+            const unitX = state.pos.x * sx;
+            const unitY = state.pos.y * sy;
+            
+            const tagW = 60 * sx;
+            const tagH = 14 * sy;
+            const tagX = unitX + 10;
+            const tagY = unitY - 20;
+            
+            ctx.fillStyle = COLORS.WHITE;
+            ctx.fillRect(tagX, tagY, tagW, tagH);
+            ctx.strokeStyle = COLORS.BLACK;
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(tagX, tagY, tagW, tagH);
+            
+            ctx.fillStyle = COLORS.BLACK;
+            ctx.font = 'bold 7px ui-monospace';
+            ctx.fillText(`${state.currentTemp.toFixed(1)}°C`, tagX + 4, tagY + tagH/1.5);
+
             ctx.beginPath();
-            ctx.arc(state.pos.x * sx, state.pos.y * sy, 7, 0, Math.PI * 2);
-            ctx.fillStyle = '#0055FF';
+            ctx.arc(unitX, unitY, 7, 0, Math.PI * 2);
+            ctx.fillStyle = COLORS.SAFE;
             ctx.fill();
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
@@ -513,14 +572,9 @@
 
         function handleMove(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
-            const sx = canvas.clientWidth / 800;
-            const sy = canvas.clientHeight / 300;
-            
-            let x = (clientX - rect.left) / sx;
-            let y = (clientY - rect.top) / sy;
-
-            x = Math.max(0, Math.min(800, x));
-            y = Math.max(0, Math.min(300, y));
+            const sx = canvas.clientWidth / 800; const sy = canvas.clientHeight / 300;
+            let x = (clientX - rect.left) / sx; let y = (clientY - rect.top) / sy;
+            x = Math.max(0, Math.min(800, x)); y = Math.max(0, Math.min(300, y));
 
             state.pos = { x, y };
             state.trail.push({ x, y });
@@ -528,27 +582,35 @@
 
             coordTracker.innerText = `X: ${Math.round(x).toString().padStart(3, '0')} | Y: ${Math.round(y).toString().padStart(3, '0')}`;
             
+            // PORTAL HANDSHAKE CHECK
+            CONTAINERS.forEach(c => {
+                c.portals.forEach(px => {
+                    if (Math.abs(x - px) < 15 && Math.abs(y - (c.y + c.h/2)) < 30) {
+                        const pinKey = `${c.id}_${px}`;
+                        if (!state.scanRecords[pinKey]) {
+                            state.scanRecords[pinKey] = state.currentTemp;
+                            addLog(`PORTAL_HANDSHAKE -> ${c.id}:${px} @ ${state.currentTemp.toFixed(1)}°C`, COLORS.SAFE);
+                        }
+                    }
+                });
+            });
+
             checkMode(x, y);
             draw();
         }
 
         function checkMode(x, y) {
-            let mode = 'OPTICAL_NORMAL';
-            let color = 'var(--signal-safe)';
+            let mode = 'OPTICAL_NORMAL'; let color = COLORS.SAFE; let targetT = 22.4;
+            if (x >= 450 && x <= 600 && y >= 150 && y <= 210) { mode = 'THERMAL_CRITICAL'; color = COLORS.HEAT; targetT = 154.9; }
+            else if (x >= 250 && x <= 400 && y >= 150 && y <= 210) { mode = 'NIGHT_VISION_AMP'; color = COLORS.BLACK; targetT = 32.1; }
 
-            if (x >= 250 && x <= 400 && y >= 50 && y <= 150) {
-                mode = 'LOW_LIGHT_AMP';
-                color = 'var(--black)';
-            } else if (x >= 450 && x <= 600 && y >= 50 && y <= 150) {
-                mode = 'THERMAL_CRITICAL';
-                color = 'var(--signal-heat)';
-            }
-
+            // Instant data assignment
+            state.currentTemp = targetT; 
+            
             if (state.currentMode !== mode) {
                 state.currentMode = mode;
-                modeDisplay.innerText = mode;
-                modeDisplay.style.color = color;
-                addLog(`SENSOR_TRANSITION -> ${mode}`, color === 'var(--black)' ? '' : color);
+                modeDisplay.innerText = mode; modeDisplay.style.color = color;
+                addLog(`SENSOR_TRANSITION -> ${mode}`, color === COLORS.BLACK ? '' : color);
             }
         }
 
@@ -564,9 +626,8 @@
         window.addEventListener('resize', resizeCanvas);
         
         window.onload = () => {
-            updateClock();
-            resizeCanvas();
-            addLog('SIM_CORE_LOADED: READY_FOR_INPUT');
+            updateClock(); resizeCanvas();
+            setInterval(() => { if(!state.isDragging) draw(); }, 50);
         };
     </script>
 </body>
